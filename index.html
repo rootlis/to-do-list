@@ -1,38 +1,208 @@
 <html>
 	<head>
 		<title>list</title>
+		<style>
+			.hidden {
+				display:none;
+			}
+		</style>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
 		<script>
-			function add_task() {
-				var new_task,
-					parent_element,
-					text_box;
+			(function( attachee ) {
+				function ListHandler() {
+					var undo_bin,		// Private variables that keep track of the state
+						redo_bin,
+						list_state,
+						id_counter,
+						add_actual,			// Private member functions
+						delete_actual,
+						save_local,
+						i;
 
-				new_task = $( document.createElement("li") );
-				parent_element = $("#list_main");
-				text_box = $("#add_text");
 
-				new_task.html(text_box.val());
-				new_task.click(remove_task);
-				parent_element.append(new_task);
-			}
 
-			function remove_task() {
-				var cur_task;
+					this.undo = function() {
+						var undo_me = undo_bin.pop();
 
-				cur_task = $( event.currentTarget );
-				cur_task.detach();
-			}
+						if( typeof undo_me === "undefined" ) {
+							return 1;
+						}
+
+						redo_bin.push( undo_me );
+
+						switch( undo_me._action ) {
+							case "restore":
+							add_actual( undo_me );
+							break;
+							case "delete":
+							delete_actual( undo_me );
+							break;
+						}
+					}
+
+					this.redo = function() {
+						var redo_me = redo_bin.pop();
+
+						if( typeof redo_me === "undefined" ) {
+							return 1;
+						}
+
+						undo_bin.push( redo_me );
+
+						switch( redo_me._action ) {
+							case "restore":
+							add_actual( redo_me );
+							break;
+							case "delete":
+							delete_actual( redo_me );
+							break;
+						}
+					}
+
+					this.add = function( text, parent, noUndo ) {
+						var new_task,
+							sibling_node,
+							text_box;
+
+						if( text == null ) {
+							text_box = $("#add_text");
+							text = text_box.val();
+							if( text == null ) {
+								return 1;
+							}
+
+							// Clear the text entry field
+							text_box.val("");
+						} 
+
+						if( parent == null ) {
+							parent = $("#list_main");
+						}
+
+						new_task = $( document.createElement("li") );
+						new_task.html( text );
+						new_task.attr( "id", id_counter++ )
+						new_task.click( this.delete );
+
+						sibling_node = parent[ 0 ].lastChild;
+						new_task._sibling = $( sibling_node );
+
+						new_task._position = 0;
+
+						if(!noUndo) {
+							undo_bin.push( new_task );
+						}
+						add_actual( new_task );
+
+						// CLear the redo bin
+						redo_bin = [];
+					}
+
+					this.delete = function( listNode ) {
+						if(listNode == null) {
+							return 1;
+						}
+
+						if( listNode.currentTarget === null ) {
+							item = listNode;
+						} else {
+							item = $( listNode.currentTarget );
+						}
+
+						undo_bin.push( item );
+						delete_actual( item );
+
+						// Clear the redo bin
+						redo_bin = [];
+					}
+
+					this.readLocal = function() {
+						for(i in list_state.list) {
+							if( list_state.list[i] !== null ) {
+								this.add(list_state.list[i], null, true);
+							}
+						}
+					}
+
+					this.exportList = function() {
+						window.open("data:application/json;charset=utf-8," +
+							encodeURIComponent(JSON.stringify(list_state))
+						)
+					}
+
+
+					add_actual = function( item ) {
+						// Save state for deletion
+						item._action = "delete";
+						// Insert the item
+						item.insertAfter( item._sibling );
+						// Update the object and save it
+						list_state.list[ item.attr("id") ] = item.html();
+						save_local();
+					}
+
+					delete_actual = function( item ) {
+						var localindex;
+						// Save state for re-insertion
+						item._action = "restore";
+						item._sibling = item.prev();
+						item._position = item.index();
+
+
+						localindex = list_state.list.indexOf( item.html() );
+						list_state.list[ localindex ] = null;
+
+						item.detach();
+
+						save_local();
+					}
+
+					save_local = function() {
+						localStorage.list_state = JSON.stringify(list_state);
+					}
+
+
+
+					undo_bin = [];
+					redo_bin = [];
+					id_counter = 0;
+
+					// Get list data from localStorage
+					list_state = localStorage.list_state;
+					if( typeof list_state === "undefined" ) {
+						list_state = {
+							id_counter: 0,
+							list: []
+						};
+					} else {
+						list_state = JSON.parse(list_state);
+					}
+				}
+
+				this.ListHandler = new ListHandler;
+			})( this );
 		</script>
 	</head>
 	<body>
 		<div id="testing">
-			<input type="text" id="add_text" /><button id="add_button">add task</button>
+			<button id="add_button">add task</button>
+			<button id="undo_button">undo</button>
+			<button id="redo_button">redo</button>
+			<button id="export_button">export</button>
+			<form action="javascript:ListHandler.add()">
+				<input type="text" id="add_text" />
+			</form>
 		</div>
-		<ul id="list_main"></ul>
+		<ul id="list_main"><li class="hidden"></li></ul>
 
 		<script>
-			$("#add_button").click( add_task );
+			$(document).ready( function() {
+				$("#add_button").click( ListHandler.add );
+				$("#undo_button").click( ListHandler.undo );
+				$("#redo_button").click( ListHandler.redo );
+				$("#export_button").click( ListHandler.exportList );
+				ListHandler.readLocal();
+			});
 		</script>
 	</body>
 </html>
