@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<title>list</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+		<script>
+			function add_task() {
+				var new_task,
+					parent_element,
+					text_box;
+
+				new_task = $( document.createElement("li") );
+				parent_element = $("#list_main");
+				text_box = $("#add_text");
+
+				new_task.html(text_box.val());
+				new_task.click(remove_task);
+				parent_element.append(new_task);
+			}
+
+			function remove_task() {
+				var cur_task;
+
+				cur_task = $( event.currentTarget );
+				cur_task.detach();
+			}
+		</script>
+	</head>
+	<body>
+		<div id="testing">
+			<input type="text" id="add_text" /><button id="add_button">add task</button>
+		</div>
+		<ul id="list_main"></ul>
+
+		<script>
+			$("#add_button").click( add_task );
+		</script>
+	</body>
+</html>
