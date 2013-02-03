@@ -2,12 +2,54 @@
 	<head>
 		<title>number two</title>
 		<style>
-			ul {
-				border:dotted;
-				border-width:1px;
+			body {
+				font-family:arial;
 			}
-			#list_main {
-				border:none;
+			ul {
+				list-style-type:none;
+				padding-left:0px;
+			}
+
+			li {
+				padding:0px;
+			}
+
+			h3 {
+				padding:0px 0px 0px 5px;
+				margin:0px;
+			}
+
+			#top {
+				padding:0px;
+			}
+			#top>.list {
+				display:inline-block;
+				vertical-align:top;
+				width:200px;
+				margin:2px;
+				padding:0px;
+			}
+
+			.list {
+				border:solid;
+				border-width:5px;
+			}
+
+			.list>h3{
+				background-color:black;
+				color:white;
+				padding:0px;
+			}
+
+			.list.selected {
+				border-color:#555555;
+			}
+			.list.selected>h3 {
+			}
+
+			.selected>h3 {
+				background-color:#555555;
+				color:white;
 			}
 		</style>
 
@@ -16,8 +58,14 @@
 			var id_counter;
 
 			function init() {
+				var list;
+
 				id_counter = 0;
-				parseList( loadList() );
+
+				list = loadList();
+				if(list) {
+					parseList( loadList() );
+				}
 			}
 
 			function addList( listName, destination ) {
@@ -29,6 +77,7 @@
 				// Let addItem take care of the list node
 				newItem = addItem( listName, destination, true );
 				newItem = $( newItem );
+				newItem.addClass("list");
 
 				// Add the new list to the new list node
 				newItem.append( newList );
@@ -42,18 +91,27 @@
 
 			function addItem( itemName, destination, skipUpdate ) {
 				var newItem,		// The new list node to be appended to destination
-					itemHeader;		// The header node contained in the list
+					itemHeader,		// The header node contained in the list
+					destinationTag;
 
 				// Create and attach a h3 to a new list node
 				itemHeader = $( document.createElement("h3") );
 				itemHeader.html( itemName );
-				itemHeader.dblclick( deleteItemHeaderHandler );
 
 				newItem = $( document.createElement("li") );
 				newItem.append( itemHeader );
+				newItem.click( liClickHandler );
 
-				// Insert the list node into the destination list
-				$( destination ).append( newItem );
+				// Get proper destination.  If it's not a list, insert after given dest.
+				destinationTag = $( destination ).prop("tagName");
+				if( destinationTag === "UL" ) {
+					$( destination ).append( newItem );
+				} else if( $(destination).children("ul").length ) {
+					$( destination ).children("ul").append( newItem );
+				} else {
+					newItem.insertAfter( destination );
+				}
+
 
 				// Update localStorage
 				if( !skipUpdate ) {
@@ -212,16 +270,36 @@
 			}
 
 			function loadList() {
-				return JSON.parse( localStorage.list );
+				if( localStorage.list ) {
+					return JSON.parse( localStorage.list );
+				}
+
+				return 0;
 			}
 
 
+			function liClickHandler(e) {
+				var selected;
+
+				selected = $( e.currentTarget );
+				$(".selected").removeClass("selected");
+				selected.addClass("selected");
+
+				e.stopPropagation();
+			}
 			function addListButtonHandler(e) {
 				var title,
-					destination;
+					destination,
+					selected;
 
 				title = $("#myTextbox").val();
-				destination = $("#top")[ 0 ]
+				selected = $(".selected");
+
+				if( selected.length ) {
+					destination = $(".selected")[ 0 ];
+				} else {
+					destination = $("#top")[ 0 ]
+				}
 
 				addList( title, destination );
 			}
@@ -231,7 +309,9 @@
 					destination;
 
 				title = $("#myTextbox").val();
-				destination = $("#top>:last-child>ul");
+
+				destination = $(".selected")[0];
+
 				addItem( title, destination );
 			}
 
