@@ -12,6 +12,7 @@
 
 			li {
 				padding:0px;
+				position:relative;
 			}
 
 			h3 {
@@ -33,12 +34,16 @@
 			.list {
 				border:solid;
 				border-width:5px;
+				margin:1px;
 			}
 
 			.list>h3{
 				background-color:black;
 				color:white;
 				padding:0px;
+			}
+			.list>.toolbar{
+				color:white;
 			}
 
 			.list.selected {
@@ -47,9 +52,18 @@
 			.list.selected>h3 {
 			}
 
-			.selected>h3 {
+			.selected>h3,.selected>.toolbar {
 				background-color:#555555;
 				color:white;
+			}
+
+			.toolbar{
+				color:black;
+				font-weight:700;
+
+				position:absolute;
+				right:5px;
+				top:0;
 			}
 		</style>
 
@@ -66,6 +80,7 @@
 				if(list) {
 					parseList( loadList() );
 				}
+				$("#top").click( topClickHandler );
 			}
 
 			function addList( listName, destination ) {
@@ -92,7 +107,8 @@
 			function addItem( itemName, destination, skipUpdate ) {
 				var newItem,		// The new list node to be appended to destination
 					itemHeader,		// The header node contained in the list
-					destinationTag;
+					destinationTag,
+					toolbar;
 
 				// Create and attach a h3 to a new list node
 				itemHeader = $( document.createElement("h3") );
@@ -105,13 +121,20 @@
 				// Get proper destination.  If it's not a list, insert after given dest.
 				destinationTag = $( destination ).prop("tagName");
 				if( destinationTag === "UL" ) {
-					$( destination ).append( newItem );
+					$( destination ).prepend( newItem );
 				} else if( $(destination).children("ul").length ) {
-					$( destination ).children("ul").append( newItem );
-				} else {
+					$( destination ).children("ul").prepend( newItem );
+				} else if( $( destination ).children.length ) {
 					newItem.insertAfter( destination );
+				} else {
+					return 0;
 				}
 
+				// Attach toolbar
+				setTimeout( function() {
+					toolbar = makeToolbar( newItem[0] );
+					newItem.append( toolbar );
+				}, 0);
 
 				// Update localStorage
 				if( !skipUpdate ) {
@@ -184,6 +207,35 @@
 				return parsedDOM;
 			}
 
+			function makeToolbar(item) {
+				var close,
+					min,
+					add,
+					toolbar;
+
+				toolbar = $( document.createElement("span") );
+				toolbar.addClass("toolbar");
+
+				close = $( document.createElement("span") );
+				close.html("X");
+				close.click( closeClickHandler );
+				toolbar.prepend( close );
+
+				if( $(item).hasClass("list") ) {
+					min = $( document.createElement("span") );
+					min.html("_");
+					min.click( minClickHandler );
+					toolbar.prepend( min );
+				}
+
+				add = $( document.createElement("span") );
+				add.html("+");
+				add.click( addClickHandler );
+				toolbar.prepend( add );
+
+				return toolbar[ 0 ];
+			}
+
 			function parseList(list) {
 				var domFinal,
 					scanStack,
@@ -207,7 +259,7 @@
 					curDOM = domStack.pop();
 					curScan = scanStack.pop();
 
-					for( i=0; i<curScan.length; i++ ) {
+					for( i=curScan.length-1; i>=0; i-- ) {
 						if( curScan[i].list ) {
 							nextDOM = addList( curScan[i].header, curDOM );
 
@@ -287,6 +339,36 @@
 
 				e.stopPropagation();
 			}
+
+			function topClickHandler(e){
+				$(".selected").removeClass("selected");
+			}
+
+			function closeClickHandler(e) {
+				var itemDOMNode;
+
+				itemDOMNode = $( e.currentTarget ).parent().parent()[ 0 ];
+				deleteItem( itemDOMNode );
+			}
+
+			function addClickHandler(e) {
+				var itemDOMNode,
+					text;
+
+				itemDOMNode = $( e.currentTarget ).parent().parent()[ 0 ];
+
+				text = $("#myTextbox").val();
+
+				addItem( text, itemDOMNode );
+			}
+
+			function minClickHandler(e) {
+				var itemDOMNode;
+
+				itemDOMNode = $( e.currentTarget ).parent().parent().children("ul");
+				itemDOMNode.toggle();
+			}
+
 			function addListButtonHandler(e) {
 				var title,
 					destination,
