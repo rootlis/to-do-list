@@ -1,0 +1,259 @@
+<html>
+	<head>
+		<title>number two</title>
+		<style>
+			ul {
+				border:dotted;
+				border-width:1px;
+			}
+			#list_main {
+				border:none;
+			}
+		</style>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+		<script>
+			var id_counter;
+
+			function init() {
+				id_counter = 0;
+				parseList( loadList() );
+			}
+
+			function addList( listName, destination ) {
+				var newList,		// The list we'll be creating
+					newItem;		// The item that the list will reside in
+
+				newList = $( document.createElement("ul") );
+
+				// Let addItem take care of the list node
+				newItem = addItem( listName, destination, true );
+				newItem = $( newItem );
+
+				// Add the new list to the new list node
+				newItem.append( newList );
+
+				// Update localStorage
+				saveList( scanList() );
+
+				// Return the list element and remove the jQuery stuff.
+				return newList[ 0 ];
+			}
+
+			function addItem( itemName, destination, skipUpdate ) {
+				var newItem,		// The new list node to be appended to destination
+					itemHeader;		// The header node contained in the list
+
+				// Create and attach a h3 to a new list node
+				itemHeader = $( document.createElement("h3") );
+				itemHeader.html( itemName );
+				itemHeader.dblclick( deleteItemHeaderHandler );
+
+				newItem = $( document.createElement("li") );
+				newItem.append( itemHeader );
+
+				// Insert the list node into the destination list
+				$( destination ).append( newItem );
+
+				// Update localStorage
+				if( !skipUpdate ) {
+					saveList( scanList() );
+				}
+
+				// Return the list node without jQuery stuff
+				return newItem[ 0 ];
+			}
+
+			function deleteItem( itemDOMNode ) {
+				// Pull the node out of the DOM, and return it to the user.
+				return $( itemDOMNode ).detach();
+			}
+
+			function scanList() {
+				var parsedDOM,
+					scanStack,
+					domStack,
+					curScan,
+					curDOM,
+					nextDOM,
+					curChild,
+					childTag,
+					i;
+
+				parsedDOM = {
+					"lists" : []
+				};
+
+				scanStack = [];
+				scanStack.push( parsedDOM.lists );
+
+				domStack = [];
+				domStack.push( $("#top") );
+
+				while( domStack.length ) {
+					curDOM = domStack.pop();
+					curScan = scanStack.pop();
+
+					for( i=0; i<curDOM.children().length; i++ ) {
+						curChild = curDOM.children()[ i ];
+						childTag = $( curChild ).prop( "tagName" );
+
+						if( childTag === "LI" ) {
+							curScan[ i ] = {};
+							curScan[ i ].header = $( curChild ).children("h3").html();
+
+							nextDOM = $( curChild ).children("ul");
+							if( nextDOM[0] ) {
+								curScan[ i ].list = [];
+
+								domStack.push( nextDOM );
+								scanStack.push( curScan[i].list );
+							} else {
+								curScan[ i ].list = null;
+							}
+
+						}
+					}
+				}
+
+				return parsedDOM;
+			}
+
+			function parseList(list) {
+				var domFinal,
+					scanStack,
+					domStack,
+					curScan,
+					curDOM,
+					nextDOM,
+					nextChild,
+					curHeading,
+					i;
+
+				domFinal = $( document.createElement("ul") );
+
+				scanStack = [];
+				scanStack.push( list.lists );
+
+				domStack = [];
+				domStack.push( $("#top") );
+
+				while( scanStack.length ) {
+					curDOM = domStack.pop();
+					curScan = scanStack.pop();
+
+					for( i=0; i<curScan.length; i++ ) {
+						if( curScan[i].list ) {
+							nextDOM = addList( curScan[i].header, curDOM );
+
+							domStack.push( nextDOM );
+							scanStack.push( curScan[i].list );
+						} else {
+							addItem( curScan[i].header, curDOM );
+						}
+					}
+				}
+			}
+
+			function parseList_old(list) {
+				var domFinal,
+					scanStack,
+					domStack,
+					curScan,
+					curDOM,
+					curChild,
+					nextChild,
+					curHeading,
+					i;
+
+				domFinal = $( document.createElement("ul") );
+
+				scanStack = [];
+				scanStack.push( list.lists );
+
+				domStack = [];
+				domStack.push( domFinal );
+
+				while( scanStack.length ) {
+					curDOM = domStack.pop();
+					curScan = scanStack.pop();
+
+					for( i=0; i<curScan.length; i++ ) {
+						curChild = $( document.createElement("li") );
+
+						curHeading = $( document.createElement("h3") );
+						curHeading.html( curScan[i].header );
+
+						curChild.append( curHeading );
+
+						curDOM.append( curChild );
+
+						if( curScan[i].list ) {
+							nextChild = $( document.createElement("ul") );
+							curChild.append( nextChild );
+							domStack.push( nextChild );
+							scanStack.push( curScan[i].list );
+						}
+					}
+				}
+
+				$("#top").replaceWith( domFinal );
+			}
+
+			function saveList(list) {
+				localStorage.list = JSON.stringify( list );
+			}
+
+			function loadList() {
+				return JSON.parse( localStorage.list );
+			}
+
+
+			function addListButtonHandler(e) {
+				var title,
+					destination;
+
+				title = $("#myTextbox").val();
+				destination = $("#top")[ 0 ]
+
+				addList( title, destination );
+			}
+
+			function addItemButtonHandler(e) {
+				var title,
+					destination;
+
+				title = $("#myTextbox").val();
+				destination = $("#top>:last-child>ul");
+				addItem( title, destination );
+			}
+
+			function deleteItemHeaderHandler(e) {
+				var itemDOMNode;
+
+				itemDOMNode = $( e.target ).parent()[ 0 ];
+				deleteItem( itemDOMNode );
+			}
+		</script>
+	</head>
+	<body>
+		<div id="testing">
+			<button id="itemAdd">add item</button>
+			<button id="listAdd">add list</button>
+			<button id="loadLocal">load data</button>
+			<button id="saveLocal">save data</button>
+			<form action="javascript:addItemButtonHandler()">
+				<input type="text" id="myTextbox" />
+			</form>
+		</div>
+		<ul id="top"></ul>
+
+		<script>
+			$(document).ready( function() {
+				init();
+				$("#itemAdd").click(addItemButtonHandler);
+				$("#listAdd").click(addListButtonHandler);
+			});
+		</script>
+	</body>
+</html>
