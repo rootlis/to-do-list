@@ -65,8 +65,15 @@
 			}
 
 			function deleteItem( itemDOMNode ) {
+				var oldNode;
+
 				// Pull the node out of the DOM, and return it to the user.
-				return $( itemDOMNode ).detach();
+				oldNode = $( itemDOMNode ).detach();
+
+				// Update localStorage
+				saveList( scanList() );
+
+				return oldNode[ 0 ];
 			}
 
 			function scanList() {
@@ -240,8 +247,6 @@
 		<div id="testing">
 			<button id="itemAdd">add item</button>
 			<button id="listAdd">add list</button>
-			<button id="loadLocal">load data</button>
-			<button id="saveLocal">save data</button>
 			<form action="javascript:addItemButtonHandler()">
 				<input type="text" id="myTextbox" />
 			</form>
