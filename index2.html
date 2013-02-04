@@ -49,8 +49,6 @@
 			.list.selected {
 				border-color:#555555;
 			}
-			.list.selected>h3 {
-			}
 
 			.selected>h3,.selected>.toolbar {
 				background-color:#555555;
@@ -58,12 +56,23 @@
 			}
 
 			.toolbar{
-				color:black;
+				color:white;
 				font-weight:700;
 
+				position:static;
+				right:5px;
+				top:0;
+
+				text-align:justify;
+
+				cursor:default;
+			}
+			.list>.toolbar {
 				position:absolute;
 				right:5px;
 				top:0;
+
+				padding:0px;
 			}
 		</style>
 
@@ -80,7 +89,7 @@
 				if(list) {
 					parseList( loadList() );
 				}
-				$("#top").click( topClickHandler );
+				$("#top").mousedown( topClickHandler );
 			}
 
 			function addList( listName, destination ) {
@@ -116,9 +125,9 @@
 
 				newItem = $( document.createElement("li") );
 				newItem.append( itemHeader );
-				newItem.click( liClickHandler );
+				newItem.mousedown( liClickHandler );
 
-				// Get proper destination.  If it's not a list, insert after given dest.
+				// Get proper destination.  Destination is not a list, insert after given dest.
 				destinationTag = $( destination ).prop("tagName");
 				if( destinationTag === "UL" ) {
 					$( destination ).prepend( newItem );
@@ -130,11 +139,15 @@
 					return 0;
 				}
 
-				// Attach toolbar
+				// Attach toolbar after we're done building the item
 				setTimeout( function() {
 					toolbar = makeToolbar( newItem[0] );
 					newItem.append( toolbar );
-				}, 0);
+
+					if( !newItem.hasClass("list") ) {
+						$( toolbar ).hide();
+					}
+				}, 0 );
 
 				// Update localStorage
 				if( !skipUpdate ) {
@@ -211,27 +224,43 @@
 				var close,
 					min,
 					add,
-					toolbar;
+					toolbar,
+					lineAfter,
+					padding;
 
-				toolbar = $( document.createElement("span") );
+				toolbar = $( document.createElement("div") );
 				toolbar.addClass("toolbar");
 
 				close = $( document.createElement("span") );
-				close.html("X");
-				close.click( closeClickHandler );
+				close.html(" X ");
+				close.mousedown( closeClickHandler );
 				toolbar.prepend( close );
 
 				if( $(item).hasClass("list") ) {
 					min = $( document.createElement("span") );
-					min.html("_");
-					min.click( minClickHandler );
+					min.html(" _ ");
+					min.mousedown( minClickHandler );
 					toolbar.prepend( min );
 				}
 
 				add = $( document.createElement("span") );
-				add.html("+");
-				add.click( addClickHandler );
+				add.html(" + ");
+				add.mousedown( addClickHandler );
 				toolbar.prepend( add );
+
+				padding = $( document.createElement("div") );
+				padding.css( "display", "inline-block" );
+				toolbar.prepend( padding );
+
+				padding = $( document.createElement("div") );
+				padding.css( "display", "inline-block" );
+				toolbar.append( padding );
+
+				lineAfter = $( document.createElement("div") );
+				lineAfter.html("");
+				toolbar.append( lineAfter );
+				lineAfter.css( "display", "inline-block" );
+				lineAfter.css( "width", "100%" );
 
 				return toolbar[ 0 ];
 			}
@@ -331,42 +360,63 @@
 
 
 			function liClickHandler(e) {
-				var selected;
+				var selected,
+					deselected;
 
 				selected = $( e.currentTarget );
-				$(".selected").removeClass("selected");
+
+				deselected = $(".selected");
+				deselected.removeClass("selected");
+
 				selected.addClass("selected");
+				selected.children(".toolbar").slideDown(200);
+
+				deselected = deselected.filter(":not(.selected):not(.list)");
+				deselected.children(".toolbar").slideUp(200);
 
 				e.stopPropagation();
 			}
 
 			function topClickHandler(e){
-				$(".selected").removeClass("selected");
+				var selected;
+
+				selected = $(".selected")
+
+				selected.removeClass("selected");
+
+				selected = selected.filter(":not(.selected):not(.list)");
+
+				selected.children(".toolbar").slideUp(200);
 			}
 
 			function closeClickHandler(e) {
 				var itemDOMNode;
 
 				itemDOMNode = $( e.currentTarget ).parent().parent()[ 0 ];
-				deleteItem( itemDOMNode );
+				$( itemDOMNode ).slideUp( 200, function() {
+					deleteItem( itemDOMNode );
+				} );
 			}
 
 			function addClickHandler(e) {
 				var itemDOMNode,
-					text;
+					text,
+					newItem;
 
 				itemDOMNode = $( e.currentTarget ).parent().parent()[ 0 ];
 
 				text = $("#myTextbox").val();
 
-				addItem( text, itemDOMNode );
+				newItem = addItem( text, itemDOMNode );
+				$( newItem ).hide();
+				$( newItem ).slideDown( 200 );
 			}
 
 			function minClickHandler(e) {
 				var itemDOMNode;
 
 				itemDOMNode = $( e.currentTarget ).parent().parent().children("ul");
-				itemDOMNode.toggle();
+				itemDOMNode.slideToggle( 200 );
 			}
 
 			function addListButtonHandler(e) {
