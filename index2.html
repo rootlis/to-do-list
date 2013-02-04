@@ -74,6 +74,14 @@
 
 				padding:0px;
 			}
+
+			.mouseOver {
+				color:orange;
+			}
+
+			.list > h3.minClicked {
+				color:orange;
+			}
 		</style>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
@@ -127,7 +135,7 @@
 				newItem.append( itemHeader );
 				newItem.mousedown( liClickHandler );
 
-				// Get proper destination.  Destination is not a list, insert after given dest.
+				// Get proper destination.  If destination is not a list, insert after given dest.
 				destinationTag = $( destination ).prop("tagName");
 				if( destinationTag === "UL" ) {
 					$( destination ).prepend( newItem );
@@ -234,18 +242,38 @@
 				close = $( document.createElement("span") );
 				close.html(" X ");
 				close.mousedown( closeClickHandler );
+				close.hover( function() {
+					$( this ).toggleClass("mouseOver");
+				} );
 				toolbar.prepend( close );
 
 				if( $(item).hasClass("list") ) {
 					min = $( document.createElement("span") );
 					min.html(" _ ");
 					min.mousedown( minClickHandler );
+					min.hover( function() {
+						$( this ).toggleClass("mouseOver");
+					} );
+					min.mousedown( function() {
+						$( this ).parent().parent().children("h3").toggleClass("minClicked");
+					} );
 					toolbar.prepend( min );
 				}
+
+				send = $( document.createElement("span") );
+				send.html(" > ");
+				send.mousedown( sendClickHandler );
+				send.hover( function() {
+					$( this ).toggleClass("mouseOver");
+				} );
+				toolbar.prepend( send );
 
 				add = $( document.createElement("span") );
 				add.html(" + ");
 				add.mousedown( addClickHandler );
+				add.hover( function() {
+					$( this ).toggleClass("mouseOver");
+				} );
 				toolbar.prepend( add );
 
 				padding = $( document.createElement("div") );
@@ -258,9 +286,9 @@
 
 				lineAfter = $( document.createElement("div") );
 				lineAfter.html("");
-				toolbar.append( lineAfter );
 				lineAfter.css( "display", "inline-block" );
 				lineAfter.css( "width", "100%" );
+				toolbar.append( lineAfter );
 
 				return toolbar[ 0 ];
 			}
@@ -387,6 +415,8 @@
 				selected = selected.filter(":not(.selected):not(.list)");
 
 				selected.children(".toolbar").slideUp(200);
+
+				$("li").unbind( "mousedown", sendClickHandler );
 			}
 
 			function closeClickHandler(e) {
@@ -410,6 +440,46 @@
 				newItem = addItem( text, itemDOMNode );
 				$( newItem ).hide();
 				$( newItem ).slideDown( 200 );
+			}
+
+			function sendClickHandler(e) {
+				var toSend;
+
+				toSend = $( e.currentTarget ).parent().parent();
+				toSend.addClass("toSend");
+
+				$("li").mousedown( sendeeClickHandler );
+
+				e.stopPropagation();
+			}
+
+			function sendeeClickHandler(e) {
+				var toSend,
+					destination;
+
+				$("li").unbind( "mousedown", sendClickHandler );
+
+				destination = $( e.currentTarget );
+
+				if( destination.hasClass("toSend") ) {
+					destination.removeClass("toSend");
+					return 0;
+				}
+
+				toSend = $(".toSend");
+				toSend.removeClass("toSend");
+
+				toSend.slideUp( 200, function() {
+					deleteItem( toSend );
+					if( destination.hasClass("list") ) {
+						destination.children("ul").prepend( toSend );
+					} else {
+						toSend.insertAfter( destination );
+					}
+					toSend.slideDown( 200 );
+
+					e.stopPropagation();
+				} );
 			}
 
 			function minClickHandler(e) {
