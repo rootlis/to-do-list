@@ -26,7 +26,7 @@
 			#top>.list {
 				display:inline-block;
 				vertical-align:top;
-				width:200px;
+				width:250px;
 				margin:2px;
 				padding:0px;
 			}
@@ -46,8 +46,9 @@
 				color:white;
 			}
 
-			.list.selected {
-				border-color:#555555;
+			.list.selected>h3,.list.selected>.toolbar {
+				border-color:#000000;
+				background-color:#000000;
 			}
 
 			.selected>h3,.selected>.toolbar {
@@ -79,8 +80,15 @@
 				color:orange;
 			}
 
+			.checked>h3 {
+				color:#6495ED;
+			}
+
 			.list > h3.minClicked {
 				color:orange;
+			}
+			.checked.list > h3.minClicked {
+				color:#6495ED;
 			}
 		</style>
 
@@ -100,14 +108,14 @@
 				$("#top").mousedown( topClickHandler );
 			}
 
-			function addList( listName, destination ) {
+			function addList( listName, destination, checked ) {
 				var newList,		// The list we'll be creating
 					newItem;		// The item that the list will reside in
 
 				newList = $( document.createElement("ul") );
 
 				// Let addItem take care of the list node
-				newItem = addItem( listName, destination, true );
+				newItem = addItem( listName, destination, true, checked );
 				newItem = $( newItem );
 				newItem.addClass("list");
 
@@ -121,19 +129,50 @@
 				return newList[ 0 ];
 			}
 
-			function addItem( itemName, destination, skipUpdate ) {
+			function addItem( itemName, destination, skipUpdate, checked ) {
 				var newItem,		// The new list node to be appended to destination
 					itemHeader,		// The header node contained in the list
 					destinationTag,
 					toolbar;
 
+				// Create the list item
+				newItem = $( document.createElement("li") );
+				newItem.mousedown( liClickHandler );
+
 				// Create and attach a h3 to a new list node
 				itemHeader = $( document.createElement("h3") );
-				itemHeader.html( itemName );
+				itemHeader.css( "padding-left", "25px" );
 
-				newItem = $( document.createElement("li") );
+				// Create checkbox for completed items
+				checkboxContainer = $( document.createElement("div") );
+				checkboxContainer.click( checkboxClickHandler );
+
+				checkboxContainer.css( "width", "25px" );
+				checkboxContainer.css( "display", "inline-block" );
+				checkboxContainer.css( "margin-left", "-25px" );
+				checkboxContainer.css( "vertical-align", "top" );
+
+				checkbox = $( document.createElement("input") );
+				checkbox.attr( "type", "checkbox" );
+				if( checked ) {
+					checkbox.prop( "checked", true );
+					newItem.addClass("checked");
+				}
+
+				checkboxContainer.append( checkbox );
+				itemHeader.append( checkboxContainer );
+
+				// Attach the text separately
+				itemText = $( document.createElement("div") );
+				itemText.addClass("itemText");
+				itemText.css( "display", "inline-block" );
+				itemText.css( "width", "100%" );
+				itemText.css( "vertical-align", "middle" );
+				itemText.html( itemName );
+				itemHeader.append( itemText );
+
+				// Append the header to the list item
 				newItem.append( itemHeader );
-				newItem.mousedown( liClickHandler );
 
 				// Get proper destination.  If destination is not a list, insert after given dest.
 				destinationTag = $( destination ).prop("tagName");
@@ -141,7 +180,7 @@
 					$( destination ).prepend( newItem );
 				} else if( $(destination).children("ul").length ) {
 					$( destination ).children("ul").prepend( newItem );
-				} else if( $( destination ).children.length ) {
+				} else if( $(destination).children.length ) {
 					newItem.insertAfter( destination );
 				} else {
 					return 0;
@@ -185,6 +224,7 @@
 					curScan,
 					curDOM,
 					nextDOM,
+					chilren,
 					curChild,
 					childTag,
 					i;
@@ -202,26 +242,26 @@
 				while( domStack.length ) {
 					curDOM = domStack.pop();
 					curScan = scanStack.pop();
+					children = curDOM.children("li");
 
-					for( i=0; i<curDOM.children().length; i++ ) {
-						curChild = curDOM.children()[ i ];
+					for( i=0; i<children.length; i++ ) {
+						curChild = children[ i ];
 						childTag = $( curChild ).prop( "tagName" );
 
-						if( childTag === "LI" ) {
-							curScan[ i ] = {};
-							curScan[ i ].header = $( curChild ).children("h3").html();
+						curScan[ i ] = {};
+						curScan[ i ].header = $( curChild ).children("h3").children(".itemText").html();
+						curScan[ i ].checked = $( curChild ).hasClass("checked");
 
-							nextDOM = $( curChild ).children("ul");
-							if( nextDOM[0] ) {
-								curScan[ i ].list = [];
+						nextDOM = $( curChild ).children("ul");
+						if( nextDOM[0] ) {
+							curScan[ i ].list = [];
 
-								domStack.push( nextDOM );
-								scanStack.push( curScan[i].list );
-							} else {
-								curScan[ i ].list = null;
-							}
-
+							domStack.push( nextDOM );
+							scanStack.push( curScan[i].list );
+						} else {
+							curScan[ i ].list = null;
 						}
+
 					}
 				}
 
@@ -318,60 +358,15 @@
 
 					for( i=curScan.length-1; i>=0; i-- ) {
 						if( curScan[i].list ) {
-							nextDOM = addList( curScan[i].header, curDOM );
+							nextDOM = addList( curScan[i].header, curDOM, curScan[i].checked );
 
 							domStack.push( nextDOM );
 							scanStack.push( curScan[i].list );
 						} else {
-							addItem( curScan[i].header, curDOM );
+							addItem( curScan[i].header, curDOM, false, curScan[i].checked );
 						}
 					}
 				}
-			}
-
-			function parseList_old(list) {
-				var domFinal,
-					scanStack,
-					domStack,
-					curScan,
-					curDOM,
-					curChild,
-					nextChild,
-					curHeading,
-					i;
-
-				domFinal = $( document.createElement("ul") );
-
-				scanStack = [];
-				scanStack.push( list.lists );
-
-				domStack = [];
-				domStack.push( domFinal );
-
-				while( scanStack.length ) {
-					curDOM = domStack.pop();
-					curScan = scanStack.pop();
-
-					for( i=0; i<curScan.length; i++ ) {
-						curChild = $( document.createElement("li") );
-
-						curHeading = $( document.createElement("h3") );
-						curHeading.html( curScan[i].header );
-
-						curChild.append( curHeading );
-
-						curDOM.append( curChild );
-
-						if( curScan[i].list ) {
-							nextChild = $( document.createElement("ul") );
-							curChild.append( nextChild );
-							domStack.push( nextChild );
-							scanStack.push( curScan[i].list );
-						}
-					}
-				}
-
-				$("#top").replaceWith( domFinal );
 			}
 
 			function saveList(list) {
@@ -480,6 +475,18 @@
 
 					e.stopPropagation();
 				} );
+			}
+
+			function checkboxClickHandler(e) {
+				var boxContainer,
+					listItem;
+
+				boxContainer = $( e.currentTarget );
+				listItem = boxContainer.parent().parent();
+
+				listItem.toggleClass("checked");
+
+				saveList( scanList() );
 			}
 
 			function minClickHandler(e) {
