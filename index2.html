@@ -21,13 +21,14 @@
 				padding:0px 0px 0px 5px;
 				margin:0px;
 			}
+			form {
+				margin-bottom:0em;
+			}
 
 			#top {
 				padding:0px;
 			}
 			#top>.list {
-				display:inline-block;
-				vertical-align:top;
 				width:250px;
 				margin:2px;
 				padding:0px;
@@ -43,34 +44,41 @@
 				background-color:black;
 				color:white;
 				padding:0px;
+				padding-bottom:5px;
 			}
-			.list>.toolbar{
+			.list>.toolbarContainer{
 				color:white;
+				background-color:#000000;
 			}
 
-			.list.selected>h3,.list.selected>.toolbar {
+			.list.selected>h3,.list.selected>.toolbarContainer {
 				border-color:#000000;
 				background-color:#000000;
 			}
 
-			.selected>h3,.selected>.toolbar {
+			.selected>h3,.selected>.toolbarContainer {
 				background-color:#555555;
 				color:white;
 			}
 
-			.toolbar{
+			.toolbarContainer {
 				color:white;
 				font-weight:700;
-
-				position:static;
-				right:5px;
-				top:0;
-
+			}
+			.toolbar {
 				text-align:justify;
 
+				position:static;
+
 				cursor:default;
+
+				right:5px;
+				top:0;
 			}
-			.list>.toolbar {
+			.addBar {
+				padding-bottom:5px;
+			}
+			.list>.toolbarContainer>.toolbar {
 				position:absolute;
 				right:5px;
 				top:0;
@@ -78,7 +86,7 @@
 				padding:0px;
 			}
 
-			.mouseOver {
+			.mouseOver, .adding {
 				color:orange;
 			}
 
@@ -99,6 +107,7 @@
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
 		<script src="jquery-ui-1.10.0.custom/js/jquery-ui-1.10.0.custom.min.js"></script>
+		<script src="jquery-touch-fix.js"></script>
 		<script>
 			var id_counter;
 
@@ -106,6 +115,7 @@
 				var list;
 
 				id_counter = 0;
+
 
 				list = loadList();
 				if(list) {
@@ -205,7 +215,7 @@
 				// Attach toolbar after we're done building the item
 				setTimeout( function() {
 					toolbar = makeToolbar( newItem[0] );
-					newItem.append( toolbar );
+					newItem.children(":first").after( toolbar );
 
 					if( !newItem.hasClass("list") ) {
 						$( toolbar ).hide();
@@ -290,8 +300,18 @@
 					min,
 					add,
 					toolbar,
+					toolbarContainer,
+					addBar,
+					addBarForm,
+					addBarTextInput,
+					addBarRadioButtonContainer,
+					addBarRadioButtonList,
+					addBarRadioButtonContainer,
 					lineAfter,
 					padding;
+
+				toolbarContainer = $( document.createElement("div") );
+				toolbarContainer.addClass("toolbarContainer");
 
 				toolbar = $( document.createElement("div") );
 				toolbar.addClass("toolbar");
@@ -312,6 +332,39 @@
 						$( this ).toggleClass("mouseOver");
 					} );
 					toolbar.prepend( min );
+
+					// Make toolbar for adding items to a list
+					addBar = $( document.createElement("div") );
+					addBar.addClass("addBar");
+					addBar.hide();
+
+					addBarForm = $( document.createElement("form") );
+					addBarForm.attr( "action", "javascript:addBarHandler()" );
+
+					addBarTextInput = $( document.createElement("input") );
+					addBarTextInput.attr( "type", "text" );
+					addBarTextInput.css( "width", "100%" );
+					addBarForm.append( addBarTextInput );
+
+					addBarRadioButtonContainer = $( document.createElement("div") );
+					addBarRadioButtonItem = $( document.createElement("input") );
+					addBarRadioButtonItem.attr( "type", "radio" );
+					addBarRadioButtonItem.attr( "name", "itemType" );
+					addBarRadioButtonItem.attr( "value", "item" );
+					addBarRadioButtonItem.prop( "checked", true );
+					addBarRadioButtonList = $( document.createElement("input") );
+					addBarRadioButtonList.attr( "type", "radio" );
+					addBarRadioButtonList.attr( "name", "itemType" );
+					addBarRadioButtonList.attr( "value", "list" );
+					addBarRadioButtonContainer.append( addBarRadioButtonItem );
+					addBarRadioButtonContainer.append( "Item" );
+					addBarRadioButtonContainer.append( addBarRadioButtonList );
+					addBarRadioButtonContainer.append( "List" );
+
+					addBarForm.append( addBarRadioButtonContainer );
+					addBar.append( addBarForm );
+
+					toolbarContainer.append( addBar );
 				}
 
 				add = $( document.createElement("span") );
@@ -335,8 +388,9 @@
 				lineAfter.css( "display", "inline-block" );
 				lineAfter.css( "width", "100%" );
 				toolbar.append( lineAfter );
+				toolbarContainer.append( toolbar );
 
-				return toolbar[ 0 ];
+				return toolbarContainer[ 0 ];
 			}
 
 			function parseList(list) {
@@ -423,24 +477,30 @@
 			function closeClickHandler(e) {
 				var itemDOMNode;
 
-				itemDOMNode = $( e.currentTarget ).parent().parent()[ 0 ];
+				itemDOMNode = $( e.currentTarget ).parent().parent().parent()[ 0 ];
 				$( itemDOMNode ).slideUp( 200, function() {
 					deleteItem( itemDOMNode );
 				} );
 			}
 
 			function addClickHandler(e) {
-				var itemDOMNode,
-					text,
-					newItem;
+				var addBar,
+					addButton,
+					curAdding,
+					curAddingAddBar;
 
-				itemDOMNode = $( e.currentTarget ).parent().parent()[ 0 ];
+				addButton = $( e.currentTarget );
+				curAdding = $(".adding");
 
-				text = $("#myTextbox").val();
+				addButton.addClass("adding");
 
-				newItem = addItem( text, itemDOMNode );
-				$( newItem ).hide();
-				$( newItem ).slideDown( 200 );
+				curAdding.removeClass("adding");
+
+				curAddingAddBar = curAdding.parent().prev();
+				curAddingAddBar.slideUp( 200 );
+
+				addBar = $(".adding").parent().prev();
+				addBar.slideDown( 200 );
 			}
 
 			function checkboxClickHandler(e) {
@@ -460,9 +520,9 @@
 					minButton,
 					header;
 
-				itemDOMNode = $( e.currentTarget ).parent().parent().children("ul");
+				itemDOMNode = $( e.currentTarget ).parent().parent().parent().children("ul");
 				minButton = $( e.currentTarget );
-				header = minButton.parent().parent().children("h3");
+				header = minButton.parent().parent().parent().children("h3");
 
 				itemDOMNode.slideToggle( 200 );
 
@@ -514,6 +574,27 @@
 					completed.detach();
 					saveList( scanList() );
 				} );
+			}
+
+			function addBarHandler() {
+				var adding,
+					form,
+					text,
+					radio,
+					destination;
+
+				adding = $(".adding");
+				form = adding.parent().prev().find("form");
+				destination = adding.parent().parent().parent();
+
+				radio = form.find(":radio:checked").val();
+				text = form.find(":text").val();
+
+				if( radio == "list" ) { 
+					addList( text, destination, false );
+				} else {
+					addItem( text, destination );
+				}
 			}
 		</script>
 	</head>
