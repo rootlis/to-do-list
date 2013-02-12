@@ -84,6 +84,9 @@
 				color:#6495ED;
 			}
 
+			.toolbar>.minClicked {
+				color:orange;
+			}
 			.list > h3.minClicked {
 				color:orange;
 			}
@@ -294,9 +297,6 @@
 					min.hover( function() {
 						$( this ).toggleClass("mouseOver");
 					} );
-					min.mousedown( function() {
-						$( this ).parent().parent().children("h3").toggleClass("minClicked");
-					} );
 					toolbar.prepend( min );
 				}
 
@@ -490,10 +490,18 @@
 			}
 
 			function minClickHandler(e) {
-				var itemDOMNode;
+				var itemDOMNode,
+					minButton,
+					header;
 
 				itemDOMNode = $( e.currentTarget ).parent().parent().children("ul");
+				minButton = $( e.currentTarget );
+				header = minButton.parent().parent().children("h3");
+
 				itemDOMNode.slideToggle( 200 );
+
+				header.toggleClass("minClicked");
+				minButton.toggleClass("minClicked");
 			}
 
 			function addListButtonHandler(e) {
@@ -530,12 +538,24 @@
 				itemDOMNode = $( e.target ).parent()[ 0 ];
 				deleteItem( itemDOMNode );
 			}
+
+			function completedRemoveButtonHandler(e) {
+				var completed;
+
+				completed = $(".checked");
+
+				completed.slideUp( 200, function() {
+					completed.detach();
+					saveList( scanList() );
+				} );
+			}
 		</script>
 	</head>
 	<body>
 		<div id="testing">
 			<button id="itemAdd">add item</button>
 			<button id="listAdd">add list</button>
+			<button id="completedRemove">clear completed</button>
 			<form action="javascript:addItemButtonHandler()">
 				<input type="text" id="myTextbox" />
 			</form>
@@ -545,8 +565,9 @@
 		<script>
 			$(document).ready( function() {
 				init();
-				$("#itemAdd").click(addItemButtonHandler);
-				$("#listAdd").click(addListButtonHandler);
+				$("#itemAdd").click( addItemButtonHandler );
+				$("#listAdd").click( addListButtonHandler );
+				$("#completedRemove").click( completedRemoveButtonHandler );
 			});
 		</script>
 	</body>
