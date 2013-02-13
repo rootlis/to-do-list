@@ -1,14 +1,21 @@
+<!doctype html>
 <html>
 	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 		<title>number two</title>
 		<style>
+			input{
+				height:2em;
+				width:2em;
+			}
 			body {
+				font-size:1.7em;
+				margin:0px;
 				font-family:arial;
 			}
 			ul {
 				list-style-type:none;
 				padding-left:0px;
-				min-height:10px;
 			}
 
 			li {
@@ -16,9 +23,16 @@
 				padding:0px;
 				position:relative;
 			}
+			li.list + li.list {
+				margin-top:5px;
+			}
+			#top>li {
+				margin-left:0px;
+				margin-right:0px;
+			}
 
 			h3 {
-				padding:0px 25px 0px 5px;
+				padding:0px 50px 0px 10px;
 				margin:0px;
 			}
 			form {
@@ -29,7 +43,7 @@
 				padding:0px;
 			}
 			#top>.list {
-				width:300px;
+				width:100%;
 				padding:0px;
 			}
 
@@ -44,7 +58,7 @@
 				color:white;
 				padding:0px;
 				padding-bottom:5px;
-				padding-right:55px;
+				padding-right:3em;
 			}
 			.list>.toolbarContainer{
 				color:white;
@@ -107,7 +121,7 @@
 			}
 
 			#header>.addBar {
-				margin-top:24px;
+				margin-top:50px;
 			}
 
 			#header {
@@ -117,9 +131,9 @@
 				border-width:5px;
 				border-color:black;
 
-				width:300px;
-				min-height:24px;
-				line-height:24px;
+				width:100%;
+				min-height:50px;
+				line-height:50px;
 
 				position:relative;
 			}
@@ -140,11 +154,16 @@
 			#headerClearComplete{
 				right:0px;
 			}
-			#headerAddList>span, #headerClearComplete>span {
-				display:block;
-			}
 			.headerClicked {
 				color:orange;
+			}
+			.imaplaceholder {
+				border:0px;
+				padding:0px;
+				margin:0px;
+
+				height:2px;
+				background-color:#6495ED;
 			}
 		</style>
 
@@ -191,7 +210,21 @@
 				$("ul").sortable( {
 					connectWith: "ul",
 					handle: "> h3",
-					receive: function() {
+					placeholder: "imaplaceholder",
+					stop: function( e, ui ) {
+						var sentItem;
+
+						sentItem = $( ui.item );
+						sentItem.hide();
+						sentItem.slideDown( 200 );
+
+						// Delete items that have been dragged out of the top lists
+						if( !sentItem.hasClass("list") ) {
+							if( sentItem.parent().filter("#top").length ) {
+								sentItem.detach();
+							}
+						}
+
 						saveList( scanList() );
 					}
 				} );
@@ -212,15 +245,15 @@
 
 				// Create and attach a h3 to a new list node
 				itemHeader = $( document.createElement("h3") );
-				itemHeader.css( "padding-left", "25px" );
+				itemHeader.css( "padding-left", "1.1em" );
 
 				// Create checkbox for completed items
 				checkboxContainer = $( document.createElement("div") );
 				checkboxContainer.click( checkboxClickHandler );
 
-				checkboxContainer.css( "width", "25px" );
+				checkboxContainer.css( "width", "1.1em" );
 				checkboxContainer.css( "display", "inline-block" );
-				checkboxContainer.css( "margin-left", "-25px" );
+				checkboxContainer.css( "margin-left", "-1.1em" );
 				checkboxContainer.css( "vertical-align", "top" );
 
 				checkbox = $( document.createElement("input") );
@@ -420,6 +453,7 @@
 				addBarForm.append( addBarTextInput );
 
 				addBarRadioButtonContainer = $( document.createElement("div") );
+				addBarRadioButtonContainer.addClass("radioButtonContainer");
 				addBarRadioButtonItem = $( document.createElement("input") );
 				addBarRadioButtonItem.attr( "type", "radio" );
 				addBarRadioButtonItem.attr( "name", "itemType" );
@@ -657,6 +691,8 @@
 						listAddBars;
 
 					addBar = $( e.currentTarget ).next().next();
+
+					addBar.find(".radioButtonContainer").hide();
 
 					listAddBars = $(".adding");
 					listAddBars.parent().prev().slideUp();

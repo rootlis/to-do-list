@@ -1,0 +1,161 @@
+input{
+	height:2em;
+	width:2em;
+}
+body {
+	font-size:1.7em;
+	margin:0px;
+	font-family:arial;
+}
+ul {
+	list-style-type:none;
+	padding-left:0px;
+}
+
+li {
+	background-color:#FFFFFF;
+	padding:0px;
+	position:relative;
+}
+li.list + li.list {
+	margin-top:5px;
+}
+#top>li {
+	margin-left:0px;
+	margin-right:0px;
+}
+
+h3 {
+	padding:0px 50px 0px 10px;
+	margin:0px;
+}
+form {
+	margin-bottom:0em;
+}
+
+#top {
+	padding:0px;
+}
+#top>.list {
+	width:100%;
+	padding:0px;
+}
+
+.list {
+	border:solid;
+	border-width:5px;
+	margin:1px;
+}
+
+.list>h3{
+	background-color:black;
+	color:white;
+	padding:0px;
+	padding-bottom:5px;
+	padding-right:3em;
+}
+.list>.toolbarContainer{
+	color:white;
+	background-color:#000000;
+}
+
+.list.selected>h3,.list.selected>.toolbarContainer {
+	border-color:#000000;
+	background-color:#000000;
+}
+
+.selected>h3,.selected>.toolbarContainer {
+	background-color:#555555;
+	color:white;
+}
+
+.toolbarContainer {
+	color:#000000;
+	font-weight:700;
+}
+.list.toolbarContainer {
+	color:#FFFFFF;
+}
+.toolbar {
+	text-align:justify;
+
+	cursor:default;
+
+	right:5px;
+	top:0;
+}
+.addBar {
+	padding-bottom:5px;
+	text-align:center;
+}
+.toolbarContainer>.toolbar {
+	position:absolute;
+	right:5px;
+	top:0;
+
+	padding:0px;
+}
+
+.mouseOver, .adding {
+	color:orange;
+}
+
+.checked>h3 {
+	color:#6495ED;
+}
+
+.toolbar>.minClicked {
+	color:orange;
+}
+.list > h3.minClicked {
+	color:orange;
+}
+.checked.list > h3.minClicked {
+	color:#6495ED;
+}
+
+#header>.addBar {
+	margin-top:50px;
+}
+
+#header {
+	background-color: #000000;
+	color:white;
+	border:solid;
+	border-width:5px;
+	border-color:black;
+
+	width:100%;
+	min-height:50px;
+	line-height:50px;
+
+	position:relative;
+}
+#headerAddList, #headerClearComplete {
+	background-color:black;
+	margin:0px;
+	padding:0px;
+
+	display:inline-block;
+	position:absolute;
+
+	width:50%;
+	text-align: center;
+}
+#headerAddList {
+	left:0px;
+}
+#headerClearComplete{
+	right:0px;
+}
+.headerClicked {
+	color:orange;
+}
+.imaplaceholder {
+	border:0px;
+	padding:0px;
+	margin:0px;
+
+	height:2px;
+	background-color:#6495ED;
+}
